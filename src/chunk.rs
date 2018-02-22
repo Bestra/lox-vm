@@ -16,39 +16,12 @@ impl OpCode {
     }
 }
 
-
 type Offset = usize;
+
 pub struct Chunk {
     code: Vec<u8>,
+    lines: Vec<u32>,
     constants: ValueArray,
-}
-
-pub struct ChunkCodeIterator<'a> {
-    chunk: &'a Chunk,
-    offset: Offset,
-}
-
-impl<'a> Iterator for ChunkCodeIterator<'a> {
-    type Item = (Offset, &'a[u8]);
-
-    fn next(&mut self) -> Option<(Offset, &'a[u8])> {
-        if self.offset > self.chunk.code.len() {
-            return None;
-        }
-        let current_offset = self.offset;
-
-        let current_code = self.chunk.code[self.offset];
-        let op_code = OpCode::from_int(current_code);
-        let code_length = match op_code {
-            OpCode::Return => 1,
-            OpCode::Constant => 2,
-            OpCode::Unknown => 1,
-        };
-
-        self.offset += code_length;
-        let arr = &self.chunk.code[self.offset..self.offset + code_length];
-        Some((current_offset, arr))
-    }
 }
 
 impl Chunk {
@@ -57,6 +30,7 @@ impl Chunk {
             // TODO: use with_capacity(8) here?
             code: Vec::new(),
             constants: ValueArray::new(),
+            lines: Vec::new(),
         }
     }
 
@@ -67,12 +41,13 @@ impl Chunk {
         }
     }
 
-    pub fn write(&mut self, byte: u8) {
+    pub fn write(&mut self, byte: u8, line: u32) {
         self.code.push(byte);
+        self.lines.push(line);
     }
 
-    pub fn write_code(&mut self, code: OpCode) {
-        self.write(code as u8);
+    pub fn write_code(&mut self, code: OpCode, line: u32) {
+        self.write(code as u8, line);
     }
 
     pub fn add_constant(&mut self, value: Value) -> u8 {
@@ -97,6 +72,13 @@ impl Chunk {
 
     fn disassemble_instruction(&self, offset: usize, instruction: &[u8]) {
         print!("{:04} ", offset);
+
+        if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
+            print!("   | ");
+        } else {
+            print!("{:04} ", self.lines[offset]);
+        }
+
         let op_byte = instruction[0];
         match OpCode::from_int(op_byte) {
             OpCode::Return => print!("OP_RETURN\n"),
@@ -107,4 +89,32 @@ impl Chunk {
         }
     }
 
+}
+
+pub struct ChunkCodeIterator<'a> {
+    chunk: &'a Chunk,
+    offset: Offset,
+}
+
+impl<'a> Iterator for ChunkCodeIterator<'a> {
+    type Item = (Offset, &'a[u8]);
+
+    fn next(&mut self) -> Option<(Offset, &'a[u8])> {
+        if self.offset >= self.chunk.code.len() {
+            return None;
+        }
+        let current_offset = self.offset;
+
+        let current_code = self.chunk.code[self.offset];
+        let op_code = OpCode::from_int(current_code);
+        let code_length = match op_code {
+            OpCode::Return => 1,
+            OpCode::Constant => 2,
+            OpCode::Unknown => 1,
+        };
+
+        let arr = &self.chunk.code[self.offset..self.offset + code_length];
+        self.offset += code_length;
+        Some((current_offset, arr))
+    }
 }
