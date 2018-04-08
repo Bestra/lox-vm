@@ -7,7 +7,7 @@ pub enum OpCode {
 }
 
 impl OpCode {
-    fn from_int(i: u8) -> OpCode {
+    pub fn from_int(i: u8) -> OpCode {
         match i {
             1 => OpCode::Return,
             2 => OpCode::Constant,
@@ -19,9 +19,9 @@ impl OpCode {
 type Offset = usize;
 
 pub struct Chunk {
-    code: Vec<u8>,
-    lines: Vec<u32>,
-    constants: ValueArray,
+    pub code: Vec<u8>,
+    pub lines: Vec<u32>,
+    pub constants: ValueArray,
 }
 
 impl Chunk {
@@ -56,7 +56,7 @@ impl Chunk {
         new_index as u8
     }
 
-    pub fn disassemble(self, name: &str) {
+    pub fn disassemble(&self, name: &str) {
         println!("== {} == ", name);
         for (offset, instr) in self.code_iter() {
             self.disassemble_instruction(offset, &instr);
