@@ -1,9 +1,21 @@
 use value::{Value, ValueArray, print_value};
 
+#[repr(u8)]
 pub enum OpCode {
     Unknown = 0,
     Return = 1,
     Constant = 2,
+    Negate = 3,
+    Add = 4,
+    Subtract = 5,
+    Multiply = 6,
+    Divide = 7,
+}
+
+impl Into<u8> for OpCode {
+    fn into(self) -> u8 {
+        self as u8
+    }
 }
 
 impl OpCode {
@@ -11,7 +23,25 @@ impl OpCode {
         match i {
             1 => OpCode::Return,
             2 => OpCode::Constant,
+            3 => OpCode::Negate,
+            4 => OpCode::Add,
+            5 => OpCode::Subtract,
+            6 => OpCode::Multiply,
+            7 => OpCode::Divide,
             _ => OpCode::Unknown,
+        }
+    }
+
+    pub fn code_length(&self) -> usize {
+        match self {
+            &OpCode::Return => 1,
+            &OpCode::Constant => 2,
+            &OpCode::Negate => 1,
+            &OpCode::Unknown => 1,
+            &OpCode::Add => 1,
+            &OpCode::Subtract => 1,
+            &OpCode::Multiply => 1,
+            &OpCode::Divide => 1,
         }
     }
 }
@@ -41,13 +71,9 @@ impl Chunk {
         }
     }
 
-    pub fn write(&mut self, byte: u8, line: u32) {
-        self.code.push(byte);
+    pub fn write<T: Into<u8>>(&mut self, byte: T, line: u32) {
+        self.code.push(byte.into());
         self.lines.push(line);
-    }
-
-    pub fn write_code(&mut self, code: OpCode, line: u32) {
-        self.write(code as u8, line);
     }
 
     pub fn add_constant(&mut self, value: Value) -> u8 {
@@ -56,7 +82,7 @@ impl Chunk {
         new_index as u8
     }
 
-    pub fn disassemble(&self, name: &str) {
+    pub fn disassemble_with_iterator(&self, name: &str) {
         println!("== {} == ", name);
         for (offset, instr) in self.code_iter() {
             self.disassemble_instruction(offset, &instr);
@@ -73,6 +99,8 @@ impl Chunk {
     fn disassemble_instruction(&self, offset: usize, instruction: &[u8]) {
         print!("{:04} ", offset);
 
+
+
         if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
             print!("   | ");
         } else {
@@ -82,6 +110,11 @@ impl Chunk {
         let op_byte = instruction[0];
         match OpCode::from_int(op_byte) {
             OpCode::Return => print!("OP_RETURN\n"),
+            OpCode::Negate => print!("OP_NEGATE\n"),
+            OpCode::Add => print!("OP_ADD\n"),
+            OpCode::Subtract => print!("OP_SUBTRACT\n"),
+            OpCode::Multiply => print!("OP_MULTIPLY\n"),
+            OpCode::Divide => print!("OP_DIVIDE\n"),
             OpCode::Constant => {
                 self.disassemble_constant("OP_CONSTANT", instruction);
             }
@@ -107,11 +140,7 @@ impl<'a> Iterator for ChunkCodeIterator<'a> {
 
         let current_code = self.chunk.code[self.offset];
         let op_code = OpCode::from_int(current_code);
-        let code_length = match op_code {
-            OpCode::Return => 1,
-            OpCode::Constant => 2,
-            OpCode::Unknown => 1,
-        };
+        let code_length = op_code.code_length();
 
         let arr = &self.chunk.code[self.offset..self.offset + code_length];
         self.offset += code_length;
