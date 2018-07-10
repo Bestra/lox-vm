@@ -1,6 +1,6 @@
+use crate::chunk::{Chunk, OpCode};
+use crate::value::{print_value, Value};
 use std::fmt;
-use chunk::{Chunk, OpCode};
-use value::{Value, print_value};
 
 const STACK_MAX: usize = 256;
 
@@ -89,7 +89,7 @@ impl<'v> VM<'v> {
     }
 
     fn print_debug_info(&self) {
-      println!("stack: {:?}", self.stack)
+        println!("stack: {:?}", self.stack)
     }
 
     pub fn run(&mut self) -> Result<(), InterpretError> {
@@ -115,17 +115,17 @@ impl<'v> VM<'v> {
 
                 OpCode::Add => {
                     self.binary_op(|a, b| a + b);
-                },
+                }
                 OpCode::Subtract => {
                     self.binary_op(|a, b| a - b);
-                },
+                }
                 OpCode::Multiply => {
                     self.binary_op(|a, b| a * b);
-                },
+                }
                 OpCode::Divide => {
                     self.binary_op(|a, b| a / b);
-                },
-                OpCode::Unknown => return Err(InterpretError::RuntimeError)
+                }
+                OpCode::Unknown => return Err(InterpretError::RuntimeError),
             }
         }
     }

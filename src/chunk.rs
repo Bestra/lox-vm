@@ -1,4 +1,4 @@
-use value::{Value, ValueArray, print_value};
+use crate::value::{print_value, Value, ValueArray};
 
 #[repr(u8)]
 pub enum OpCode {
@@ -99,8 +99,6 @@ impl Chunk {
     fn disassemble_instruction(&self, offset: usize, instruction: &[u8]) {
         print!("{:04} ", offset);
 
-
-
         if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
             print!("   | ");
         } else {
@@ -121,7 +119,6 @@ impl Chunk {
             OpCode::Unknown => print!("Unknown opcode {:?}\n", instruction),
         }
     }
-
 }
 
 pub struct ChunkCodeIterator<'a> {
@@ -130,9 +127,9 @@ pub struct ChunkCodeIterator<'a> {
 }
 
 impl<'a> Iterator for ChunkCodeIterator<'a> {
-    type Item = (Offset, &'a[u8]);
+    type Item = (Offset, &'a [u8]);
 
-    fn next(&mut self) -> Option<(Offset, &'a[u8])> {
+    fn next(&mut self) -> Option<(Offset, &'a [u8])> {
         if self.offset >= self.chunk.code.len() {
             return None;
         }

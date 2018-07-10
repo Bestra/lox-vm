@@ -1,9 +1,10 @@
+cargo-features = ["edition"]
+
 [package]
 name = "lox"
 version = "0.1.0"
 authors = ["Chris Westra <cwestra@gmail.com>"]
+edition = '2018'
 
 [dependencies]
 rprompt = "1.0.3"
-
-
