@@ -48,6 +48,7 @@ impl OpCode {
 
 type Offset = usize;
 
+#[derive(Clone)]
 pub struct Chunk {
     pub code: Vec<u8>,
     pub lines: Vec<u32>,

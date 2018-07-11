@@ -17,7 +17,7 @@ fn repl() {
     println!("Lox Repl");
     loop {
         let input = rprompt::prompt_reply_stdout(">").unwrap();
-        interpret(&input);
+        interpret(&input).unwrap();
     }
 }
 
@@ -26,5 +26,5 @@ fn interpret_file(path: &str) {
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents).unwrap();
-    interpret(&contents);
+    interpret(&contents).unwrap();
 }
