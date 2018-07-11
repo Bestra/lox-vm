@@ -58,6 +58,12 @@ struct Token<'t> {
     t: TokenType,
     source: &'t str,
 }
+
+impl Token<'t> {
+    pub fn to_string(&self) -> String {
+        self.source[self.start..(self.start + self.length)].to_string()
+    }
+}
 struct Scanner<'a> {
     start: usize,
     current: usize,
@@ -77,6 +83,10 @@ impl Scanner<'a> {
 
     pub fn current_line(&self) -> usize {
         self.current
+    }
+
+    pub fn current_str(&self) -> &str {
+        &self.source[self.start..self.current]
     }
 
     // pub fn is_at_end_mut(&mut self) -> bool {
@@ -134,6 +144,9 @@ impl Scanner<'a> {
                     self.make_token(TokenType::Greater)
                 }
             }
+            '"' => self.string(),
+            c if is_digit(c) => self.number(),
+            c if is_alpha(c) => self.identifier(),
             _ => self.error_token("Unexpected character."),
         }
     }
@@ -147,7 +160,14 @@ impl Scanner<'a> {
                 '\n' => {
                     self.line += 1;
                     self.advance();
-                },
+                }
+                '/' => {
+                    if let Some('/') = self.peek_next() {
+                        while self.peek() != '\n' && !self.is_at_end() {
+                            self.advance();
+                        }
+                    }
+                }
                 _ => return,
             };
         }
@@ -175,6 +195,10 @@ impl Scanner<'a> {
         self.source.chars().nth(self.current).unwrap()
     }
 
+    pub fn peek_next(&self) -> Option<char> {
+        self.source.chars().nth(self.current + 1)
+    }
+
     // pub fn peek_mut(&mut self) -> char {
     //     self.source.chars().nth(self.current).unwrap()
     // }
@@ -197,6 +221,85 @@ impl Scanner<'a> {
             line: self.line,
             source: message,
         }
+    }
+
+    // Methods dealing with grammer start here
+
+    pub fn string(&mut self) -> Token {
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            return self.error_token("Unterminated string.");
+        }
+
+        // consume the closing '"'
+        assert_eq!(self.advance(), '"');
+        self.make_token(TokenType::String)
+    }
+
+    pub fn number(&mut self) -> Token {
+        while is_digit(self.peek()) {
+            self.advance();
+        }
+
+        if self.peek() == '.' && is_digit(self.peek_next().unwrap()) {
+            // consume the '.'
+            self.advance();
+        }
+
+        while is_digit(self.peek()) {
+            self.advance();
+        }
+
+        self.make_token(TokenType::Number)
+    }
+
+    pub fn identifier(&mut self) -> Token {
+        while is_alpha(self.peek()) || is_digit(self.peek()) {
+            self.advance();
+        }
+
+        self.make_token(self.identifier_type())
+    }
+
+    pub fn identifier_type(&self) -> TokenType {
+        match self.current_str() {
+            "and" => TokenType::And,
+            "class" => TokenType::Class,
+            "else" => TokenType::Else,
+            "if" => TokenType::If,
+            "false" => TokenType::False,
+            "for" => TokenType::For,
+            "fun" => TokenType::Fun,
+            "or" => TokenType::Or,
+            "print" => TokenType::Print,
+            "return" => TokenType::Return,
+            "super" => TokenType::Super,
+            "this" => TokenType::This,
+            "true" => TokenType::True,
+            "var" => TokenType::Var,
+            "while" => TokenType::While,
+            _ => TokenType::Identifier
+        }
+    }
+}
+
+pub fn is_digit(c: char) -> bool {
+    match c {
+        '0'...'9' => true,
+        _ => false,
+    }
+}
+
+fn is_alpha(c: char) -> bool {
+    match c {
+        'a'...'z' | 'A'...'Z' | '_' => true,
+        _ => false,
     }
 }
 
@@ -249,4 +352,21 @@ fn scanner_scan_token_with_equals() {
     let mut s = Scanner::new("!=<");
     assert_eq!(s.scan_token().t, TokenType::BangEqual);
     assert_eq!(s.scan_token().t, TokenType::Less);
+}
+
+#[test]
+fn scanner_scan_string() {
+    let mut s = Scanner::new("\"Hey\"");
+    let t = s.scan_token();
+    assert_eq!(t.start, 0);
+    assert_eq!(t.length, 5);
+    assert_eq!(t.to_string(), "\"Hey\"");
+}
+
+#[test]
+fn scanner_current_str() {
+    let mut s = Scanner::new("{}");
+    s.advance();
+    s.advance();
+    assert_eq!(s.current_str(), "{}")
 }
