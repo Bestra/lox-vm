@@ -5,10 +5,10 @@ use crate::value::Value;
 use crate::vm::InterpretError;
 use std::str::FromStr;
 
-pub struct Compiler {
-    scanner: Scanner,
-    current: Token,
-    previous: Token,
+pub struct Compiler<'c> {
+    scanner: Scanner<'c>,
+    current: Token<'c>,
+    previous: Token<'c>,
     had_error: bool,
     panic_mode: bool,
     chunk: Chunk,
@@ -42,8 +42,8 @@ pub fn compile(source: &str, options: Options) -> Result<Chunk, InterpretError> 
     Compiler::new(source, options).compile()
 }
 
-impl Compiler {
-    pub fn new(source: &str, options: Options) -> Compiler {
+impl Compiler<'a> {
+    pub fn new(source: &'a str, options: Options) -> Compiler<'a> {
         Compiler {
             scanner: Scanner::new(source),
             chunk: Chunk::new(),
@@ -54,6 +54,7 @@ impl Compiler {
             options,
         }
     }
+
     pub fn compile(&mut self) -> Result<Chunk, InterpretError> {
         self.advance();
         self.expression();
@@ -175,7 +176,7 @@ impl Compiler {
     }
 
     pub fn advance(&mut self) {
-        self.previous = self.current.clone();
+        std::mem::swap(&mut self.previous, &mut self.current);
 
         loop {
             // loop past any error tokens,
@@ -197,18 +198,23 @@ impl Compiler {
     }
 
     fn error_at_current(&mut self, message: &str) {
-        self.error_at(&self.current.clone(), message)
+        self.error_at(1, message)
     }
 
     fn error(&mut self, message: &str) {
-        self.error_at(&self.previous.clone(), message)
+        self.error_at(0, message)
     }
 
-    fn error_at(&mut self, token: &Token, message: &str) {
+    fn error_at(&mut self, idx: usize, message: &str) {
         if self.panic_mode {
             return;
         }
         self.panic_mode = true;
+        let token = match idx {
+            0 => &self.previous,
+            1 => &self.current,
+            _ => panic!("bad index"),
+        };
         print!("[line {}] Error", token.line);
 
         match token.t {

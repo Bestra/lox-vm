@@ -52,32 +52,32 @@ pub enum TokenType {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Token {
+pub struct Token<'a> {
     pub start: usize,
     pub length: usize,
     pub line: usize,
     pub t: TokenType,
-    pub source: String,
+    pub source: &'a str,
 }
 
-impl Token {
+impl Token<'a> {
     pub fn to_string(&self) -> String {
-        self.source.clone()
+        self.source.to_owned()
     }
 
     ///
     /// The slice of the source string that represents the token
     pub fn as_slice(&self) -> &str {
-        &self.source
+        self.source
     }
 
-    pub fn empty() -> Token {
+    pub fn empty() -> Token<'static> {
         Token {
             start: 0,
             length: 0,
             line: 0,
             t: TokenType::Error,
-            source: String::from("Empty token"),
+            source: "Empty token",
         }
     }
 }

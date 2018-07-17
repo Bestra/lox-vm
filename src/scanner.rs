@@ -1,18 +1,18 @@
 use crate::token::{Token, TokenType};
-pub struct Scanner {
+pub struct Scanner<'a> {
     start: usize,
     current: usize,
     line: usize,
-    source: String,
+    source: &'a str,
 }
 
-impl Scanner {
-    pub fn new(source: &str) -> Scanner {
+impl Scanner<'a> {
+    pub fn new(source: &'a str) -> Scanner {
         Scanner {
             start: 0,
             current: 0,
             line: 1,
-            source: String::from(source),
+            source,
         }
     }
 
@@ -36,7 +36,7 @@ impl Scanner {
         self.current >= self.source.len()
     }
 
-    pub fn scan_token(&mut self) -> Token {
+    pub fn scan_token(&mut self) -> Token<'a> {
         self.skip_whitespace();
         self.start = self.current;
         if self.is_at_end() {
@@ -137,29 +137,29 @@ impl Scanner {
     //     self.source.chars().nth(self.current).unwrap()
     // }
 
-    fn make_token(&mut self, t: TokenType) -> Token {
+    fn make_token(&mut self, t: TokenType) -> Token<'a> {
         Token {
             t: t,
             start: self.start,
             length: self.current - self.start,
             line: self.line,
-            source: self.source[self.start..self.current].to_owned(),
+            source: &self.source[self.start..self.current],
         }
     }
 
-    fn error_token(&mut self, message: &'static str) -> Token {
+    fn error_token(&mut self, message: &'static str) -> Token<'static> {
         Token {
             t: TokenType::Error,
             start: 0,
             length: message.len(),
             line: self.line,
-            source: String::from(message),
+            source: message,
         }
     }
 
     // Methods dealing with grammer start here
 
-    pub fn string(&mut self) -> Token {
+    pub fn string(&mut self) -> Token<'a> {
         while self.peek() != '"' && !self.is_at_end() {
             if self.peek() == '\n' {
                 self.line += 1;
@@ -176,7 +176,7 @@ impl Scanner {
         self.make_token(TokenType::String)
     }
 
-    pub fn number(&mut self) -> Token {
+    pub fn number(&mut self) -> Token<'a> {
         while is_digit(self.peek()) {
             self.advance();
         }
@@ -193,7 +193,7 @@ impl Scanner {
         self.make_token(TokenType::Number)
     }
 
-    pub fn identifier(&mut self) -> Token {
+    pub fn identifier(&mut self) -> Token<'a> {
         while is_alpha(self.peek()) || is_digit(self.peek()) {
             self.advance();
         }
