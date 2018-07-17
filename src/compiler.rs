@@ -42,8 +42,8 @@ pub fn compile(source: &str, options: Options) -> Result<Chunk, InterpretError> 
     Compiler::new(source, options).compile()
 }
 
-impl Compiler<'a> {
-    pub fn new(source: &'a str, options: Options) -> Compiler<'a> {
+impl Compiler<'c> {
+    pub fn new(source: &'c str, options: Options) -> Compiler<'c> {
         Compiler {
             scanner: Scanner::new(source),
             chunk: Chunk::new(),
@@ -260,11 +260,6 @@ impl Precedence {
             9 => Some(Precedence::Unary),      // ! - +
             10 => Some(Precedence::Call),      // . () []
             11 => Some(Precedence::Primary),
-            _ => None,
-        }
-    }
-    pub fn from_token(t: TokenType) -> Option<Precedence> {
-        match t {
             _ => None,
         }
     }
