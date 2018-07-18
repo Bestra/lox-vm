@@ -33,15 +33,15 @@ impl OpCode {
     }
 
     pub fn code_length(&self) -> usize {
-        match self {
-            &OpCode::Return => 1,
-            &OpCode::Constant => 2,
-            &OpCode::Negate => 1,
-            &OpCode::Unknown => 1,
-            &OpCode::Add => 1,
-            &OpCode::Subtract => 1,
-            &OpCode::Multiply => 1,
-            &OpCode::Divide => 1,
+        match *self {
+            OpCode::Return => 1,
+            OpCode::Constant => 2,
+            OpCode::Negate => 1,
+            OpCode::Unknown => 1,
+            OpCode::Add => 1,
+            OpCode::Subtract => 1,
+            OpCode::Multiply => 1,
+            OpCode::Divide => 1,
         }
     }
 }
@@ -77,10 +77,10 @@ impl Chunk {
         self.lines.push(line);
     }
 
-    pub fn add_constant(&mut self, value: Value) -> u8 {
+    pub fn add_constant(&mut self, value: Value) -> usize {
         let new_index = self.constants.len();
         self.constants.push(value);
-        new_index as u8
+        new_index
     }
 
     pub fn disassemble_with_iterator(&self, name: &str) {
@@ -94,7 +94,7 @@ impl Chunk {
         let constant_idx = instruction[1] as usize;
         print!("{} {:04} '", name, constant_idx);
         print_value(self.constants[constant_idx]);
-        print!("'\n");
+        println!();
     }
 
     fn disassemble_instruction(&self, offset: usize, instruction: &[u8]) {
@@ -108,16 +108,16 @@ impl Chunk {
 
         let op_byte = instruction[0];
         match OpCode::from_int(op_byte) {
-            OpCode::Return => print!("OP_RETURN\n"),
-            OpCode::Negate => print!("OP_NEGATE\n"),
-            OpCode::Add => print!("OP_ADD\n"),
-            OpCode::Subtract => print!("OP_SUBTRACT\n"),
-            OpCode::Multiply => print!("OP_MULTIPLY\n"),
-            OpCode::Divide => print!("OP_DIVIDE\n"),
+            OpCode::Return => println!("OP_RETURN"),
+            OpCode::Negate => println!("OP_NEGATE"),
+            OpCode::Add => println!("OP_ADD"),
+            OpCode::Subtract => println!("OP_SUBTRACT"),
+            OpCode::Multiply => println!("OP_MULTIPLY"),
+            OpCode::Divide => println!("OP_DIVIDE"),
             OpCode::Constant => {
                 self.disassemble_constant("OP_CONSTANT", instruction);
             }
-            OpCode::Unknown => print!("Unknown opcode {:?}\n", instruction),
+            OpCode::Unknown => println!("Unknown opcode {:?}", instruction),
         }
     }
 }

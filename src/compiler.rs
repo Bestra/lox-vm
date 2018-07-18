@@ -15,9 +15,8 @@ pub struct Compiler<'c> {
     options: Options,
 }
 
-
 pub struct Options {
-  debug_print_code: bool,
+    debug_print_code: bool,
 }
 
 impl Options {
@@ -35,8 +34,6 @@ impl Default for Options {
         }
     }
 }
-
-
 
 pub fn compile(source: &str, options: Options) -> Result<Chunk, InterpretError> {
     Compiler::new(source, options).compile()
@@ -58,11 +55,12 @@ impl Compiler<'c> {
     pub fn compile(&mut self) -> Result<Chunk, InterpretError> {
         self.advance();
         self.expression();
-        self.consume(TokenType::Eof, "Expected end of file.");
+        self.consume(&TokenType::Eof, "Expected end of file.");
         self.end_compilation();
-        match self.had_error {
-            false => Ok(self.chunk.clone()),
-            true => Err(InterpretError::RuntimeError),
+        if self.had_error {
+            Err(InterpretError::RuntimeError)
+        } else {
+            Ok(self.chunk.clone())
         }
     }
 
@@ -77,10 +75,8 @@ impl Compiler<'c> {
 
     pub fn end_compilation(&mut self) {
         self.emit_return();
-        if self.options.debug_print_code {
-          if !self.had_error {
-              self.chunk.disassemble_with_iterator("Main chunk");
-          }
+        if self.options.debug_print_code && !self.had_error {
+            self.chunk.disassemble_with_iterator("Main chunk");
         }
     }
 
@@ -95,11 +91,11 @@ impl Compiler<'c> {
 
     pub fn make_constant(&mut self, v: Value) -> u8 {
         let constant = self.chunk.add_constant(v);
-        if constant > std::u8::MAX {
+        if constant > std::u8::MAX as usize {
             self.error("Too many constants in one chunk");
             0
         } else {
-            constant
+            constant as u8
         }
     }
 
@@ -116,7 +112,7 @@ impl Compiler<'c> {
 
     pub fn grouping(&mut self) {
         self.expression();
-        self.consume(TokenType::RightParen, "Expect ')' after expression.");
+        self.consume(&TokenType::RightParen, "Expect ')' after expression.");
     }
 
     pub fn unary(&mut self) {
@@ -152,26 +148,26 @@ impl Compiler<'c> {
 
         let rule = get_rule(&self.previous.t);
         match rule.prefix {
-            Some(prefix_rule) => self.parse_grammar_rule(prefix_rule),
-            None => self.error("Expected expression.")
+            Some(prefix_rule) => self.parse_grammar_rule(&prefix_rule),
+            None => self.error("Expected expression."),
         }
 
         while precedence < get_rule(&self.current.t).precedence {
             self.advance();
             let rule = get_rule(&self.previous.t);
             match rule.infix {
-                Some(infix_rule) => self.parse_grammar_rule(infix_rule),
-                None => self.error("Expected expression.")
+                Some(infix_rule) => self.parse_grammar_rule(&infix_rule),
+                None => self.error("Expected expression."),
             }
         }
     }
 
-    fn parse_grammar_rule(&mut self, rule: Grammar) {
+    fn parse_grammar_rule(&mut self, rule: &Grammar) {
         match rule {
             Grammar::Number => self.number(),
             Grammar::Unary => self.unary(),
             Grammar::Binary => self.binary(),
-            Grammar::Grouping => self.grouping()
+            Grammar::Grouping => self.grouping(),
         }
     }
 
@@ -189,8 +185,8 @@ impl Compiler<'c> {
         }
     }
 
-    pub fn consume(&mut self, token_type: TokenType, message: &str) {
-        if self.current.t == token_type {
+    pub fn consume(&mut self, token_type: &TokenType, message: &str) {
+        if self.current.t == *token_type {
             self.advance();
         } else {
             self.error_at_current(message);
@@ -279,15 +275,11 @@ struct ParseRule {
 }
 
 impl ParseRule {
-   fn new(
-        prefix: Option<Grammar>,
-        infix: Option<Grammar>,
-        precedence: Precedence,
-    ) -> ParseRule {
+    fn new(prefix: Option<Grammar>, infix: Option<Grammar>, precedence: Precedence) -> ParseRule {
         ParseRule {
             prefix,
             infix,
-            precedence: precedence,
+            precedence,
         }
     }
 }

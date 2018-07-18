@@ -57,7 +57,7 @@ pub struct VM<'v> {
 impl<'v> VM<'v> {
     pub fn new(chunk: &'v Chunk) -> VM {
         VM {
-            chunk: chunk,
+            chunk,
             ip: 0,
             stack: OperandStack::new(),
         }

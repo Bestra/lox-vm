@@ -107,7 +107,7 @@ impl Scanner<'a> {
                             self.advance();
                         }
                     } else {
-                        return
+                        return;
                     }
                 }
                 _ => return,
@@ -139,7 +139,7 @@ impl Scanner<'a> {
 
     fn make_token(&mut self, t: TokenType) -> Token<'a> {
         Token {
-            t: t,
+            t,
             start: self.start,
             length: self.current - self.start,
             line: self.line,
