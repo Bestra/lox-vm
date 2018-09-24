@@ -18,7 +18,7 @@ struct OperandStack {
 impl OperandStack {
     pub fn new() -> OperandStack {
         OperandStack {
-            stack: [0.0; 256],
+            stack: [Value::Number(0.0); 256],
             stack_top: 0,
         }
     }
