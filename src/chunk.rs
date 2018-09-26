@@ -10,6 +10,9 @@ pub enum OpCode {
     Subtract = 5,
     Multiply = 6,
     Divide = 7,
+    Nil = 8,
+    True = 9,
+    False = 10,
 }
 
 impl Into<u8> for OpCode {
@@ -28,6 +31,9 @@ impl OpCode {
             5 => OpCode::Subtract,
             6 => OpCode::Multiply,
             7 => OpCode::Divide,
+            8 => OpCode::Nil,
+            9 => OpCode::True,
+            10 => OpCode::False,
             _ => OpCode::Unknown,
         }
     }
@@ -42,6 +48,9 @@ impl OpCode {
             OpCode::Subtract => 1,
             OpCode::Multiply => 1,
             OpCode::Divide => 1,
+            OpCode::Nil => 1,
+            OpCode::True => 1,
+            OpCode::False => 1,
         }
     }
 }
@@ -117,6 +126,9 @@ impl Chunk {
             OpCode::Constant => {
                 self.disassemble_constant("OP_CONSTANT", instruction);
             }
+            OpCode::Nil => println!("OP_NIL"),
+            OpCode::True => println!("OP_TRUE"),
+            OpCode::False => println!("OP_FALSE"),
             OpCode::Unknown => println!("Unknown opcode {:?}", instruction),
         }
     }

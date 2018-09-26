@@ -101,7 +101,7 @@ impl Compiler<'c> {
 
     pub fn number(&mut self) {
         match f64::from_str(self.previous.as_slice()) {
-            Ok(v) => self.emit_constant(v),
+            Ok(v) => self.emit_constant(Value::Number(v)),
             Err(_) => self.error("Invalid number"),
         }
     }

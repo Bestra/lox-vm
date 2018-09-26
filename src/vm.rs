@@ -69,9 +69,9 @@ impl<'v> VM<'v> {
         instruction
     }
 
-    fn binary_op<F>(&mut self, perform: F)
+    fn binary_op<F>(&mut self, perform: F) -> Result<(), InterpretError>
     where
-        F: Fn(Value, Value) -> Value,
+        F: Fn(f64, f64) -> f64,
     {
         assert!(
             self.stack.len() >= 2,
@@ -80,7 +80,13 @@ impl<'v> VM<'v> {
 
         let b = self.stack.pop();
         let a = self.stack.pop();
-        self.stack.push(perform(a, b));
+        match (a, b) {
+            (Value::Number(n1), Value::Number(n2)) => {
+                self.stack.push(Value::Number(perform(n1, n2)));
+                Ok(())
+            }
+            _ => Err(InterpretError::RuntimeError),
+        }
     }
 
     fn read_constant(&mut self) -> Value {
@@ -108,22 +114,22 @@ impl<'v> VM<'v> {
                     print_value(self.stack.pop());
                     return Ok(());
                 }
-                OpCode::Negate => {
-                    let c = self.stack.pop();
-                    self.stack.push(-c);
-                }
+                OpCode::Negate => match self.stack.pop() {
+                    Value::Number(n) => self.stack.push(Value::Number(-n)),
+                    _ => return Err(InterpretError::RuntimeError),
+                },
 
                 OpCode::Add => {
-                    self.binary_op(|a, b| a + b);
+                    self.binary_op(|a, b| a + b)?;
                 }
                 OpCode::Subtract => {
-                    self.binary_op(|a, b| a - b);
+                    self.binary_op(|a, b| a - b)?;
                 }
                 OpCode::Multiply => {
-                    self.binary_op(|a, b| a * b);
+                    self.binary_op(|a, b| a * b)?;
                 }
                 OpCode::Divide => {
-                    self.binary_op(|a, b| a / b);
+                    self.binary_op(|a, b| a / b)?;
                 }
                 OpCode::Unknown => return Err(InterpretError::RuntimeError),
             }
